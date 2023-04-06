@@ -36,23 +36,20 @@ void PtBintoHex(int inbits, char *bin) {
     //return hex;
 }
 
-unsigned long long binaryToDecimal(char *binaryString) {
-    int i;
-    unsigned long long decimal = 0;
-    int len = strlen(binaryString);
+void bitStringToNum(int bits, char *bitString, int *result)
+{
+    int value = 0;
 
-    for (i = 0; i < len; i++) {
-        if (binaryString[i] == '1') {
-            decimal = decimal * 2 + 1;
-        } else if (binaryString[i] == '0') {
-            decimal = decimal * 2;
-        } else {
-            printf("Invalid binary string.\n");
-            return -1;
-        }
+    // 비트문자열을 숫자로 변환
+    for (int i = 0; i < bits; i++)
+    {
+        if (bitString[i] == '1')
+            value += pow(2, bits - i - 1);
     }
 
-    return decimal;
+    *result = value;
+
+    return ;
 }
 
 void Cipher(char plainBlock[64],char RoundKeys[16][48],char cipherBlock[64]){
@@ -63,8 +60,8 @@ void Cipher(char plainBlock[64],char RoundKeys[16][48],char cipherBlock[64]){
     printf("After initial permutation : ");PtBintoHex(64,inBlock);puts("");
 
     split(64,32,inBlock,leftBlock,rightBlock);
-        printf("left:[%.*s]\n",28,leftBlock);
-        printf("right:[%.*s]\n",28,rightBlock);
+        // printf("left:[%.*s]\n",28,leftBlock);
+        // printf("right:[%.*s]\n",28,rightBlock);
 
     printf("After splitting : L0=");PtBintoHex(32,leftBlock);
     printf("\tR0=");PtBintoHex(32,rightBlock);puts("");
@@ -72,22 +69,28 @@ void Cipher(char plainBlock[64],char RoundKeys[16][48],char cipherBlock[64]){
     puts("|Round\t\t\t|\tLeft\t\t|\tRight\t  |\tRound Key  |");
     for(char round=0; round<16; round++){
         mixer(leftBlock,rightBlock,RoundKeys[round]);
+        //if(round==0)memcpy(leftBlock,"01011010011110001110001110010100",32);
         if(round!=15){
-            swapper(leftBlock,rightBlock);
+            swapper(leftBlock,rightBlock); //현재 leftBlock가 잘못됨
         }
         printf("|Round %d\t\t|",round+1);PtBintoHex(32,leftBlock);printf("\t|");PtBintoHex(32,rightBlock);printf(" |");PtBintoHex(48,RoundKeys[round]);puts("|");
     }
-
+    puts("-------------------------------------------------------------------------------------"); //75개
     combine(32,64,leftBlock,rightBlock,outBlock);
+    printf("After combination : ");PtBintoHex(64,outBlock);puts("");
     permute(64,64,outBlock,cipherBlock,FinalPermutationTable);
+    printf("Ciphertext : ");PtBintoHex(64,cipherBlock);puts("");
 }
 
 void mixer(char* leftBlock, char* rightBlock,char RoundKeys[48]){
+    //printf("mixer : leftBlock {%.*s} ->",32,leftBlock);PtBintoHex(32,leftBlock);puts("");
+    //printf("mixer : rightBlock {%.*s}->",32,rightBlock);PtBintoHex(32,rightBlock);puts("");
+    //오류 오류 
     char T1[32],T2[32],T3[32];
     copy(32,rightBlock,T1);
     function(T1,RoundKeys,T2);
     exclusiveOr(32,leftBlock,T2,T3);
-    copy(32,T3,rightBlock);
+    copy(32,T3,leftBlock); //!!수도코드 오류 rightBlock->leftBlock
 }
 
 void permute(char inbits,char outbits,char *inBlock, char *outBlock, char *Table){ // InitialPermutationTable, ExpansionPermutationTable 
@@ -123,59 +126,110 @@ void swapper(char leftBlock[32],char rightBlock[32]){
     copy(32,T,rightBlock);
 }
 
-void exclusiveOr(char inbits,char *inBlock, char *T2,char *T3){
-    // for(int i=0;i<inbits;i++){
-    //     T2[i]=((inBlock[i]-48)^(RoundKeys[i]-48))+48;
-    // }
-
-    // 문자열을 비트로 변환
+void exclusiveOr(int inBlockLength, char* inBlock_A, char* inBlock_B, char* outBlock){
     unsigned long long block = 0;
-    for (int i = 0; i < inbits; i++) {
-        block = (block << 1) | (inBlock[i] - '0');
+    for (int i = 0; i < inBlockLength; i++) {
+        block = (block << 1) | (inBlock_A[i] - '0');
     }
 
     unsigned long long t2 = 0;
-    for (int i = 0; i < inbits; i++) {
-        t2 = (t2 << 1) | (T2[i] - '0');
+    for (int i = 0; i < inBlockLength; i++) {
+        t2 = (t2 << 1) | (inBlock_B[i] - '0');
     }
 
-    // XOR 연산
     unsigned long long result = block ^ t2;
 
-    // 결과 비트를 문자열로 변환
-    for (int i = inbits - 1; i >= 0; i--) {
-        T3[i] = (result & 1) + '0';
+    for (int i = inBlockLength - 1; i >= 0; i--) {
+        outBlock[i] = (result & 1) + '0';
         result = result >> 1;
     }
+
 }
 
 void copy(char inbits, char *inBlock,char *outBlock){
     memcpy(outBlock,inBlock,inbits);
 }
 
-void function(char inBlock[32],char RoundKeys[48],char outBlock[32]){
-    char T1[48],T2[48],T3[32];
+void function(char inBlock[32],char RoundKeys[48],char outBlock[32]){//여기에 문제가 있다
+    unsigned char T1[48],T2[48],T3[32];
     permute(32,48,inBlock,T1,ExpansionPermutationTable);
     exclusiveOr(48,T1,RoundKeys,T2);
+    //printf("T2 : %.*s\n",48,T2);
     substitute(T2,T3,S_Box);
     permute(32,32,T3,outBlock,StraightPermutationTable);
 }
 
-void substitute(char inBlock[48],char outBlock[32],char SubstitutionTable[8][4][16]){
+void substitute(char inBlock[48],char outBlock[32],char SubstitutionTable[8][4][16]){//여기에 문제가?
     //S-box 48->32 !!수도코드 오류 inBlock[32]->[48], outBlock[48]->[32]
-    for(int i=0;i<8;i++){
-        int row = 2*inBlock[i*6] + inBlock[i*6+5];
-        int col = 8*inBlock[i*6+1] + 4*inBlock[i*6+2] + 2*inBlock[i*6+3] + inBlock[i*6+4];
+    // printf("[inBlock]\n");        
+    // for(int l=0,cnt=1;l<48;l++,cnt++){
+    //         printf("%c",inBlock[l]);
+    //         if(cnt==6){
+    //             printf(" ");
+    //             cnt=0;
+    //         }
 
-        char value = SubstitutionTable[i][row][col];
+    //     }
+    for(int i=0;i<8;i++){//inBlock를 6개씩 끊기
+        //2진수를 10진수로 변환
+        // int row = 2*inBlock[i*6+1] + inBlock[i*6+6];
+        // int col = 8*inBlock[i*6+2] + 4*inBlock[i*6+3] + 2*inBlock[i*6+4] + inBlock[i*6+5];
 
-        outBlock[i*4]=value/8; value %= 8;
-        outBlock[i*4+1]=value/4; value %= 4;
-        outBlock[i*4+2]=value/2; value %= 2;
-        outBlock[i*4+3]=value;
+        //puts("");
+        unsigned char row_bn[2];
+        unsigned char col_bn[4];
+        row_bn[0]=inBlock[i*6];
+        row_bn[1]=inBlock[i*6+5];
+        col_bn[0]=inBlock[i*6+1];
+        col_bn[1]=inBlock[i*6+2];
+        col_bn[2]=inBlock[i*6+3];
+        col_bn[3]=inBlock[i*6+4];
+        //printf("[%d]%c%c|",i,row_bn[0],row_bn[1]);for(int k=0;k<4;k++){printf("%c",col_bn[k]);}puts("");
+        int row,col;
+        bitStringToNum(2,row_bn,&row);
+        bitStringToNum(4,col_bn,&col);
+
+        int value = SubstitutionTable[i][row][col];
+
+        //printf("%d[%d][%d] -> %d : ",i,row,col,value);
+        for (char j = 0; j < 4; j++) {
+            int bit = (value >> (3 - j)) & 1;
+            outBlock[i*4+j] = bit ? '1' : '0';
+            printf("%c",outBlock[i*4+j]);
+        }        
+        //이거 2진수 문자열로 넣어야함
+        // outBlock[i*4]=value/8; value %= 8;
+        // outBlock[i*4+1]=value/4; value %= 4;
+        // outBlock[i*4+2]=value/2; value %= 2;
+        // outBlock[i*4+3]=value;
     }
     
 }
+
+// void substitute(char inBlock[48], char outBlock[32], char SubstitutionTable[8][4][16]) {
+//     for (int i = 0; i < 8; i++) {
+//         char row_bn[2];
+//         char col_bn[4];
+//         row_bn[0] = inBlock[i * 4];
+//         row_bn[1] = inBlock[i * 4 + 3];
+//         col_bn[0] = inBlock[i * 4 + 1];
+//         col_bn[1] = inBlock[i * 4 + 2];
+//         col_bn[2] = inBlock[i * 4 + 3];
+//         col_bn[3] = inBlock[i * 4];
+
+//         int row, col;
+//         bitStringToNum(2, row_bn, &row);
+//         bitStringToNum(4, col_bn, &col);
+
+//         char value = SubstitutionTable[i][row][col];
+
+//         for (char j = 0; j < 4; j++) {
+//             int bit = (value >> (3 - j)) & 1;
+//             outBlock[i * 4 + j] = bit ? '1' : '0';
+//         }
+//     }
+// }
+
 
 void Key_Generator(char keyWithParities[64],char RoundKeys[16][48],char ShiftTable[16]){
     //puts("[Key_Generator]");PtBintoHex(64,keyWithParities);puts("");
