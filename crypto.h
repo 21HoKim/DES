@@ -3,9 +3,12 @@
 #include<stdlib.h>
 
 
-#define PLAINTEXT 0x123456ABCD132536
+#define PLAINTEXT 0x123456ABCD132536ull
 #define KEY 0xAABB09182736CCDDull
-#define CIPHERTEXT 0xC0B7A8D05F3A829C
+#define CIPHERTEXT 0xC0B7A8D05F3A829Cull
+
+void PtBintoHex(int inbits, char *bin);
+unsigned long long binaryToDecimal(char *binaryString);
 
 
 void Cipher(char plainBlock[64],char RoundKeys[16][48],char cipherBlock[64]);
@@ -17,7 +20,7 @@ void swapper(char leftBlock[32],char rightBlock[32]);
 void exclusiveOr(char inbits,char *inBlock, char *RoundKeys,char *T2);
 void copy(char inbits, char *inBlock,char *outBlock);
 void function(char inBlock[32],char RoundKey[48],char outBlock[32]);
-void substitute(char inBlock[32],char outBlock[48],char SubstitutionTable[8][4][16]);
+void substitute(char inBlock[48],char outBlock[32],char SubstitutionTable[8][4][16]);
 
 void Key_Generator(char keyWithParities[64],char RoundKey[16][48],char ShiftTable[16]);
 void shiftLeft(char block[28],char numOfShifts);

@@ -1,6 +1,10 @@
 #include "crypto.h"
-extern unsigned char ShiftTable[16];
+extern char ShiftTable[16];
 int main(){
+    printf("Plaintext : %llx",PLAINTEXT); printf("\tKey : %llx\n",KEY); printf("CipherText : %llx\n",CIPHERTEXT);
+
+
+
     char RoundKeys[16][48];
     long long OutKeys;
 
@@ -25,10 +29,8 @@ int main(){
         int bit = (Plaintext >> (63 - i)) & 1;
         plainBlock[i] = bit ? '1' : '0';
     }
+    //puts("[keyWithParities]");PtBintoHex(64,keyWithParities);puts("");
     Key_Generator(keyWithParities,RoundKeys,ShiftTable);
-    for(int i=0;i<16;i++){
-        printf("%.*s\n",48,RoundKeys[i]);
-    }
     Cipher(plainBlock,RoundKeys,cipherBlock);
     return 0;
 }

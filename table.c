@@ -66,7 +66,7 @@ char StraightPermutationTable[32]=
 
 char ParityDropTable[56]=
 {                                   57,49,41,33,25,17,O9,O1,
-                                    58,50,42,34,26,18,19,O2,
+                                    58,50,42,34,26,18,10,O2,
                                     59,51,43,35,27,19,11,O3,
                                     60,52,44,36,63,55,47,39,
                                     31,23,15,O7,62,54,46,38,
@@ -83,7 +83,7 @@ char KeyCompressionTable[48]=
                                     34,53,46,42,50,36,29,32
 };
 
-unsigned char ShiftTable[16]=
+char ShiftTable[16]=
 {
                                     1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1
 };
