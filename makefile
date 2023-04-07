@@ -1,7 +1,7 @@
 all : DES
 
 DES : main.c
-	gcc -o DES main.c crypto.c table.c -lm
+	gcc -o DES main.c crypto.c table.c
 	./DES
 
 def : main.c crypto.c

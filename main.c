@@ -1,7 +1,7 @@
 #include "crypto.h"
 extern char ShiftTable[16];
 int main(){
-    printf("Plaintext : %llx",PLAINTEXT); printf("\tKey : %llx\n",KEY); printf("CipherText : %llx\n",CIPHERTEXT);
+    printf("Plaintext : %llX",PLAINTEXT); printf("\tKey : %llX\n",KEY); printf("CipherText : %llX\n",CIPHERTEXT);
 
 
 
